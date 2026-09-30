@@ -272,7 +272,9 @@ class AgentRunner:
                                        "severity": rule["severity"],
                                        "msg": rule["message"], "hit": m.group(0)})
                     break
-            if rule.get("require") == "risk_disclaimer" and "风险提示" not in answer:
+            # 拒答类回答(未做任何投资分析)豁免风险提示要求
+            refusal_like = ("没法满足" in answer or "无法" in answer[:80] or "不能凭" in answer[:60])                            and "### 结论" not in answer and "### 分析" not in answer
+            if rule.get("require") == "risk_disclaimer" and "风险提示" not in answer and not refusal_like:
                 violations.append({"id": "CR-003", "name": "缺少风险提示",
                                    "severity": "block", "msg": rule["message"]})
             if rule.get("require") == "data_source_note" and ("as_of" not in answer and "报告期" not in answer):

@@ -11,8 +11,8 @@ class AgentConfig:
     # ---- LM ----
     api_base: str = "https://token.pixdance.top/v1"
     api_key_env: str = "PIXDANCE_CHAT_KEY"
-    model: str = "kimi-k3"            # 主模型:规划 / 工具调用 / 综述
-    reviewer_model: str = "kimi-k3"   # 审阅模型(Reflection),可与主模型不同
+    model: str = "glm-5.3"            # 主模型:规划 / 工具调用 / 综述
+    reviewer_model: str = "glm-5.3"   # 审阅模型(Reflection),可与主模型不同
     temperature: float | None = None  # None = 不传(部分模型如 kimi-k3 仅支持默认值)
 
     # ---- ReAct 循环 ----

@@ -81,21 +81,25 @@ class LLMClient:
             payload["tool_choice"] = "auto"
 
         last_err: Exception | None = None
-        for attempt in range(2):  # 1 次重试
+        # 指数退避重试:网关对长 payload(tools+system)存在间歇性 503/超时,
+        # 2 次紧重试不够;退避 2/4/8s 共 4 次尝试显著提升成功率
+        for attempt in range(4):
             try:
                 data = self._post(payload)
                 return self._parse(data)
             except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, LLMError) as e:
                 last_err = e
-                if attempt == 0:
-                    time.sleep(2)
+                if attempt < 3:
+                    time.sleep(2 ** (attempt + 1))  # 2s, 4s, 8s
         raise LLMError(f"LLM 调用失败(model={self.model}): {last_err}") from last_err
 
     # ---- 内部 ----
     def _post(self, payload: dict) -> dict:
         req = urllib.request.Request(
             self.cfg.api_base.rstrip("/") + "/chat/completions",
-            data=json.dumps(payload).encode("utf-8"),
+            # ensure_ascii=False:中文直传 UTF-8 比 \\u 转义小 ~40%,
+            # 大 payload(多工具+长系统提示)在网关侧更稳定
+            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
             headers={
                 "Content-Type": "application/json",
                 "Authorization": "Bearer " + self.cfg.api_key(),
@@ -110,7 +114,7 @@ class LLMClient:
         """类方法通道:供并行 review worker 使用,不共享实例状态。"""
         req = urllib.request.Request(
             cfg.api_base.rstrip("/") + "/chat/completions",
-            data=json.dumps(payload).encode("utf-8"),
+            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
             headers={
                 "Content-Type": "application/json",
                 "Authorization": "Bearer " + cfg.api_key(),
