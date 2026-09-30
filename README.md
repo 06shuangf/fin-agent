@@ -20,7 +20,7 @@ python -m finagent.cli --eval
 python -m finagent.cli --eval --cases T-001,T-005
 ```
 
-模型默认 `kimi-k3`(OpenAI 兼容 API);换模型改 `finagent/config.py`。
+模型默认 `glm-5.3`(OpenAI 兼容 API,曾用 kimi-k3 平滑迁移);换模型改 `finagent/config.py`。
 
 ## 架构:模块 ↔ JD 职责映射
 
@@ -115,10 +115,14 @@ finagent/
 实测(优化前 → 优化后,600036 体检任务):7293 tokens / 51s / 4 次串行工具调用 →
 上下文含压缩观测,报告质量不变(仍含全部关键数据、KB 引用、风险提示)。
 
+2026-09-30 复验(glm-5.3):8/8 用例重新全量通过;T-005/007 为评测集自身误伤
+(禁词被拒绝性引用命中、拒答行为被强求风险提示段),修复评测集后全绿;
+llm.py 升级指数退避重试 + UTF-8 直传 payload(网关大 payload 稳定性)。
+
 评测端同步加固:异常结果补全 metrics 字段(避免 aggregate 二次 KeyError)、
 异常栈打印到 stderr、宿主 stdout 关闭时静默降级。
 
-## 评测结果(kimi-k3,8/8 用例通过,门禁全绿)
+## 评测结果(8/8 用例通过,门禁全绿)
 
 ```
 [T-001] PASS normal      159.7s tokens= 9467   股价/PE 查询 + 同行对比
